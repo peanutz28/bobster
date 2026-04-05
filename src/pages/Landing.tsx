@@ -1,184 +1,549 @@
+import { useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { motion, useInView, useScroll, useTransform } from 'framer-motion'
+import { Shield, Bell, ArrowRight, Check, X, Lock, Search, MousePointer, RefreshCw } from 'lucide-react'
+import Logo from '../components/Logo'
 import { brokers } from '../data/brokers'
 
-const HIGH_RISK = brokers.filter(b => b.dangerLevel === 'high').length
+const HIGH  = brokers.filter(b => b.dangerLevel === 'high').length
+const TOTAL = brokers.length
+
+/* ─── Helpers ──────────────────────────────────────── */
+function FadeIn({ children, delay = 0, y = 24, className = '' }: {
+  children: React.ReactNode; delay?: number; y?: number; className?: string
+}) {
+  const ref = useRef(null)
+  const inView = useInView(ref, { once: true, margin: '-80px' })
+  return (
+    <motion.div ref={ref}
+      initial={{ opacity: 0, y }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.65, delay, ease: [0.22, 1, 0.36, 1] }}
+      className={className}
+    >{children}</motion.div>
+  )
+}
+
+function TiltCard({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return (
+    <motion.div
+      whileHover={{ rotateY: 4, rotateX: -2, scale: 1.015, y: -4 }}
+      transition={{ type: 'spring', stiffness: 320, damping: 22 }}
+      style={{ transformStyle: 'preserve-3d' }}
+      className={className}
+    >{children}</motion.div>
+  )
+}
+
+function Sparkle({ size = 16, color = '#F2D16B', style = {} }: {
+  size?: number; color?: string; style?: React.CSSProperties
+}) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" style={style}>
+      <path d="M8 0C8 0 8 7 8 8C8 8 1 8 0 8C0 8 8 8 8 8C8 8 8 9 8 16C8 16 8 9 8 8C8 8 15 8 16 8C16 8 8 8 8 8C8 8 8 7 8 0Z" fill={color} />
+    </svg>
+  )
+}
+
+const MARQUEE_BROKERS = [
+  'Spokeo', 'Whitepages', 'BeenVerified', 'Intelius', 'TruthFinder', 'MyLife',
+  'Radaris', 'PeopleFinders', 'TruePeopleSearch', 'PeekYou', 'Nuwber', 'VoterRecords',
+  'Mugshots.com', 'FastPeopleSearch', 'ClustrMaps',
+]
 
 export default function Landing() {
+  const heroRef = useRef(null)
+  const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
+  const bobY = useTransform(scrollYProgress, [0, 1], ['0%', '15%'])
+
   return (
-    <div className="min-h-screen bg-white">
-      {/* Nav */}
-      <nav className="border-b border-gray-100 px-6 py-4 flex items-center justify-between max-w-6xl mx-auto">
-        <span className="text-xl font-black text-lobster-600 tracking-tight">Bobster 🦞</span>
-        <Link
-          to="/onboarding"
-          className="btn-primary text-sm py-2 px-4"
-        >
-          Get Started Free
+    <div className="bg-sand-100 overflow-x-hidden">
+
+      {/* ── Nav ── */}
+      <motion.nav
+        initial={{ opacity: 0, y: -16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-8 py-4
+                   bg-sand-100/85 backdrop-blur-xl border-b border-ink-200/50"
+      >
+        <Logo />
+        <div className="hidden sm:flex items-center gap-1 text-sm font-semibold text-ink-400">
+          <a href="#how"     className="px-3 py-2 rounded-lg hover:text-ink-900 hover:bg-ink-100/60 transition-all">How it works</a>
+          <a href="#compare" className="px-3 py-2 rounded-lg hover:text-ink-900 hover:bg-ink-100/60 transition-all">Why Bobster</a>
+        </div>
+        <Link to="/onboarding" className="btn-primary py-2.5 px-5 text-sm">
+          Get started free
         </Link>
-      </nav>
+      </motion.nav>
 
-      {/* Hero */}
-      <section className="max-w-4xl mx-auto px-6 pt-20 pb-16 text-center">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-lobster-50 text-lobster-700 text-sm font-medium mb-8">
-          <span className="w-2 h-2 rounded-full bg-lobster-500 animate-pulse" />
-          Your data is on {brokers.length} sites right now
+      {/* ══════════════════════════
+          HERO — split, Bob visible
+      ══════════════════════════ */}
+      <section ref={heroRef} className="min-h-screen flex flex-col lg:flex-row items-stretch pt-[72px] overflow-hidden">
+
+        {/* Left — text */}
+        <div className="flex-1 flex flex-col justify-center px-8 sm:px-14 lg:px-20 py-16 z-10">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.15, duration: 0.55 }}
+            className="inline-flex items-center gap-2 self-start mb-8 px-4 py-2 rounded-full
+                       bg-brand-100 border border-brand-200 text-brand-700 text-xs font-black uppercase tracking-widest"
+          >
+            <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" />
+            Free · No account needed
+          </motion.div>
+
+          <motion.h1
+            initial={{ opacity: 0, y: 36 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="text-5xl sm:text-6xl xl:text-7xl font-black text-ink-900 leading-[0.92] mb-6"
+          >
+            Your data is on<br />
+            <span className="text-brand-600">{TOTAL} websites.</span><br />
+            Let's fix that.
+          </motion.h1>
+
+          {/* What it actually does — crystal clear */}
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.38, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="text-base sm:text-lg text-ink-500 max-w-md mb-4 leading-relaxed"
+          >
+            Sites like Spokeo, Whitepages, and BeenVerified publish your{' '}
+            <strong className="text-ink-800">home address, phone number, relatives, and income</strong>{' '}
+            — free for anyone to search.
+          </motion.p>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.44, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="text-base sm:text-lg text-ink-500 max-w-md mb-10 leading-relaxed"
+          >
+            Bobster gives you{' '}
+            <strong className="text-ink-800">exact, step-by-step instructions</strong>{' '}
+            to remove yourself from every major site. One by one. Free.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.5 }}
+            className="flex flex-col sm:flex-row gap-3 mb-6"
+          >
+            <Link to="/onboarding" className="group btn-primary py-4 px-8 text-base gap-3">
+              Check my exposure
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </Link>
+            <a href="#how" className="btn-outline py-4 px-8 text-base">See how it works</a>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
+            className="flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-ink-400 font-medium"
+          >
+            {['No credit card', '~2 hours total', 'Data stays in your browser'].map(t => (
+              <span key={t} className="flex items-center gap-1.5">
+                <span className="w-1 h-1 rounded-full bg-brand-400" />
+                {t}
+              </span>
+            ))}
+          </motion.div>
         </div>
 
-        <h1 className="text-5xl sm:text-6xl font-black text-gray-900 leading-tight mb-6">
-          Your personal data is{' '}
-          <span className="text-lobster-600">#NotForSale.</span>
-        </h1>
+        {/* Right — Bob stage (self-contained, no overflow) */}
+        <div className="relative lg:w-[46%] flex items-center justify-center py-12 lg:py-0 overflow-hidden"
+          style={{ background: 'radial-gradient(ellipse 90% 80% at 55% 50%, #fde4d0 0%, #f9d0bb 45%, #f5c0a4 100%)' }}
+        >
+          {/* Rings */}
+          {[320, 240].map((size, i) => (
+            <motion.div key={i}
+              initial={{ scale: 0.7, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.5 + i * 0.1, duration: 1, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute rounded-full border border-brand-300/40 pointer-events-none"
+              style={{ width: size, height: size }}
+            />
+          ))}
 
-        <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-10 leading-relaxed">
-          Data brokers publish your home address, phone number, relatives, and more — for anyone to find.
-          Bobster walks you through opting out of every major site, <strong>step by step, for free</strong>.
-        </p>
+          {/* Bob */}
+          <motion.div style={{ y: bobY }} className="relative z-10">
+            <motion.img
+              src="/bob-wink.png"
+              alt="Bob the privacy lobster"
+              initial={{ opacity: 0, scale: 0.6, rotate: -8 }}
+              animate={{ opacity: 1, scale: 1, rotate: 0, y: [0, -14, 0] }}
+              transition={{ delay: 0.4, duration: 0.9, ease: [0.22, 1, 0.36, 1],
+                y: { repeat: Infinity, duration: 3.8, ease: 'easeInOut', delay: 1.3 } }}
+              style={{ filter: 'drop-shadow(0 24px 48px rgba(180,100,80,0.28))' }}
+              className="w-56 h-56 sm:w-64 sm:h-64 lg:w-72 lg:h-72 object-contain"
+            />
+          </motion.div>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link to="/onboarding" className="btn-primary text-lg px-8 py-4">
-            Get Started with Bob 🦞
-          </Link>
-          <a href="#how-it-works" className="btn-secondary text-lg px-8 py-4">
-            How It Works
-          </a>
-        </div>
-
-        <p className="mt-6 text-sm text-gray-500">
-          No account required · No credit card · Takes ~2 hours total
-        </p>
-      </section>
-
-      {/* Stats bar */}
-      <section className="bg-gray-50 border-y border-gray-100 py-10">
-        <div className="max-w-4xl mx-auto px-6 grid grid-cols-3 gap-6 text-center">
-          <div>
-            <div className="text-4xl font-black text-lobster-600">{brokers.length}+</div>
-            <div className="text-sm text-gray-600 mt-1">Data brokers covered</div>
-          </div>
-          <div>
-            <div className="text-4xl font-black text-lobster-600">{HIGH_RISK}</div>
-            <div className="text-sm text-gray-600 mt-1">High-risk sites</div>
-          </div>
-          <div>
-            <div className="text-4xl font-black text-lobster-600">$0</div>
-            <div className="text-sm text-gray-600 mt-1">Forever free</div>
-          </div>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section id="how-it-works" className="max-w-4xl mx-auto px-6 py-20">
-        <h2 className="text-3xl font-black text-center text-gray-900 mb-4">
-          Bob's got your back 🦞
-        </h2>
-        <p className="text-gray-600 text-center mb-14 max-w-xl mx-auto">
-          Three simple steps to take back your privacy.
-        </p>
-
-        <div className="grid sm:grid-cols-3 gap-8">
+          {/* Sparkles — inside panel bounds */}
           {[
-            {
-              num: '1',
-              title: 'Tell Bob who you are',
-              desc: 'Enter your name and state. Bob instantly generates a personal risk summary showing which brokers have your data and why it matters.',
-              emoji: '📋',
-            },
-            {
-              num: '2',
-              title: 'Work through your list',
-              desc: 'Bob gives you exact, step-by-step instructions for each site. No guessing, no digging — just follow along and click "Done".',
-              emoji: '✅',
-            },
-            {
-              num: '3',
-              title: 'Bob reminds you to renew',
-              desc: 'Data brokers re-add your info every 3–6 months. Bob tracks your opt-outs and pings you when it\'s time to redo each one.',
-              emoji: '🔔',
-            },
-          ].map(({ num, title, desc, emoji }) => (
-            <div key={num} className="card p-6">
-              <div className="w-10 h-10 rounded-xl bg-lobster-100 text-lobster-700 font-black text-lg flex items-center justify-center mb-4">
-                {num}
+            { delay: 0.8,  x: '76%', y: '14%', size: 22 },
+            { delay: 1.0,  x: '83%', y: '32%', size: 13 },
+            { delay: 0.9,  x: '14%', y: '20%', size: 18 },
+            { delay: 1.05, x: '10%', y: '70%', size: 11 },
+            { delay: 1.1,  x: '80%', y: '76%', size: 10 },
+          ].map(({ delay, x, y, size }, i) => (
+            <motion.div key={i}
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay, duration: 0.5, ease: 'backOut' }}
+              style={{ position: 'absolute', left: x, top: y }}
+            >
+              <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 8 + i * 2, ease: 'linear' }}>
+                <Sparkle size={size} />
+              </motion.div>
+            </motion.div>
+          ))}
+
+          {/* Bubble circles */}
+          {[
+            { delay: 0.85, x: '22%', y: '74%', size: 18 },
+            { delay: 0.95, x: '16%', y: '63%', size: 11 },
+            { delay: 1.0,  x: '85%', y: '58%', size: 13 },
+          ].map(({ delay, x, y, size }, i) => (
+            <motion.div key={i}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay }}
+              style={{ position: 'absolute', left: x, top: y }}
+            >
+              <motion.div
+                animate={{ y: [0, -6, 0] }}
+                transition={{ repeat: Infinity, duration: 2.5 + i * 0.4, ease: 'easeInOut' }}
+                style={{
+                  width: size, height: size, borderRadius: '50%',
+                  border: '2px solid #b8ddf0', background: 'rgba(184,221,240,0.35)',
+                }}
+              />
+            </motion.div>
+          ))}
+
+          {/* Callout chips — anchored inside, no overflow */}
+          <motion.div
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.0, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute top-8 right-8 card px-4 py-3 text-center shadow-card-lg"
+          >
+            <div className="text-2xl font-black text-ink-900">{TOTAL}</div>
+            <div className="text-[11px] text-ink-400 font-semibold leading-tight">sites with<br />your data</div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute bottom-8 left-8 card px-4 py-3 shadow-card-lg"
+          >
+            <div className="flex items-center gap-2.5">
+              <span className="w-8 h-8 rounded-xl bg-brand-100 flex items-center justify-center shrink-0">
+                <Check className="w-4 h-4 text-brand-600" strokeWidth={3} />
+              </span>
+              <div>
+                <div className="text-sm font-black text-ink-900 leading-none">Free forever</div>
+                <div className="text-[11px] text-ink-400 mt-0.5">vs $129/yr DeleteMe</div>
               </div>
-              <div className="text-2xl mb-3">{emoji}</div>
-              <h3 className="font-bold text-gray-900 mb-2">{title}</h3>
-              <p className="text-gray-600 text-sm leading-relaxed">{desc}</p>
             </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ── Marquee ── */}
+      <div className="bg-ink-900 py-4 overflow-hidden">
+        <div className="flex gap-14 animate-marquee whitespace-nowrap w-max">
+          {[...MARQUEE_BROKERS, ...MARQUEE_BROKERS].map((name, i) => (
+            <span key={i} className="text-ink-500 text-sm font-semibold shrink-0 line-through decoration-brand-500/70 decoration-2">
+              {name}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Stats ── */}
+      <section className="py-20 px-6 bg-white border-b border-ink-100">
+        <div className="max-w-4xl mx-auto grid grid-cols-3 gap-6 text-center">
+          {[
+            { value: `${TOTAL}+`, label: 'Data brokers covered' },
+            { value: `${HIGH}`,   label: 'High-risk sites' },
+            { value: '$0',        label: 'Cost, forever' },
+          ].map(({ value, label }, i) => (
+            <FadeIn key={label} delay={i * 0.1}>
+              <div className="text-4xl sm:text-5xl font-black text-ink-900 mb-1.5">{value}</div>
+              <div className="text-xs text-ink-400 font-bold uppercase tracking-widest">{label}</div>
+            </FadeIn>
           ))}
         </div>
       </section>
 
-      {/* Who it's for */}
-      <section className="bg-ocean-950 text-white py-20">
-        <div className="max-w-4xl mx-auto px-6">
-          <h2 className="text-3xl font-black text-center mb-4">Who this is for</h2>
-          <p className="text-ocean-200 text-center mb-12 max-w-xl mx-auto">
-            You don't need to be a privacy expert. You just need to care.
-          </p>
-          <div className="grid sm:grid-cols-2 gap-4">
+      {/* ══════════════════════════════
+          HOW IT WORKS — numbered steps
+          with mini flow diagram
+      ══════════════════════════════ */}
+      <section id="how" className="py-28 px-6 bg-sand-100">
+        <div className="max-w-5xl mx-auto">
+          <FadeIn className="text-center mb-6">
+            <p className="section-label mb-4">How it works</p>
+            <h2 className="text-4xl sm:text-5xl font-black text-ink-900 mb-4">Bob walks every step.</h2>
+            <p className="text-ink-400 max-w-xl mx-auto text-base leading-relaxed">
+              Enter your name. Bobster finds which brokers have your data, then gives you the
+              exact clicks to remove yourself — one broker at a time.
+            </p>
+          </FadeIn>
+
+          {/* Mini flow */}
+          <FadeIn delay={0.1} className="flex items-center justify-center gap-2 sm:gap-4 my-12 flex-wrap">
             {[
-              { emoji: '😨', text: 'You just found your home address on Spokeo' },
-              { emoji: '👨‍👩‍👧', text: "You're a parent protecting your family's information" },
-              { emoji: '🧓', text: 'Elderly users targeted by scammers using data broker info' },
-              { emoji: '💔', text: 'Leaving a bad relationship and need to scrub your footprint' },
-              { emoji: '🔒', text: 'Privacy-conscious people who can\'t afford $129/year for DeleteMe' },
-              { emoji: '💼', text: 'Job changers who want to control what employers find about them' },
-            ].map(({ emoji, text }) => (
-              <div key={text} className="flex items-start gap-3 bg-white/5 rounded-xl p-4">
-                <span className="text-2xl">{emoji}</span>
-                <span className="text-ocean-100 text-sm leading-relaxed">{text}</span>
+              { icon: <Search className="w-4 h-4" />, label: 'Find your records' },
+              { icon: <MousePointer className="w-4 h-4" />, label: 'Follow exact steps' },
+              { icon: <Check className="w-4 h-4" />, label: 'Mark as done' },
+              { icon: <RefreshCw className="w-4 h-4" />, label: 'Reminded to renew' },
+            ].map(({ icon, label }, i) => (
+              <div key={label} className="flex items-center gap-2 sm:gap-4">
+                <div className="flex flex-col items-center gap-1.5">
+                  <div className="w-10 h-10 rounded-2xl bg-brand-100 border border-brand-200 flex items-center justify-center text-brand-600">
+                    {icon}
+                  </div>
+                  <span className="text-xs font-semibold text-ink-500 whitespace-nowrap">{label}</span>
+                </div>
+                {i < 3 && <ArrowRight className="w-4 h-4 text-ink-200 shrink-0 mb-4" />}
               </div>
+            ))}
+          </FadeIn>
+
+          <div className="grid sm:grid-cols-3 gap-5">
+            {[
+              { num: '01', icon: <Shield className="w-5 h-5 text-brand-600" />,  title: 'Tell Bob who you are',   body: 'Enter your name and state. Bob finds which of the 53 brokers likely have your data and ranks them by risk level.' },
+              { num: '02', icon: <Lock className="w-5 h-5 text-brand-600" />,    title: 'Follow the exact steps', body: 'Each broker has a different opt-out process. Bob gives you the precise URL, exact clicks, and what to expect.' },
+              { num: '03', icon: <Bell className="w-5 h-5 text-brand-600" />,    title: 'Get reminded to renew',  body: 'Brokers quietly re-add your data every 3–6 months. Bob tracks every expiration and tells you exactly when to redo it.' },
+            ].map(({ num, icon, title, body }, i) => (
+              <FadeIn key={num} delay={i * 0.12}>
+                <TiltCard className="h-full">
+                  <div className="card p-7 h-full flex flex-col">
+                    <div className="flex items-center justify-between mb-8">
+                      <span className="text-4xl font-black text-ink-100">{num}</span>
+                      <span className="w-10 h-10 rounded-2xl bg-brand-50 border border-brand-100 flex items-center justify-center">{icon}</span>
+                    </div>
+                    <h3 className="text-lg font-bold text-ink-900 mb-3">{title}</h3>
+                    <p className="text-sm text-ink-400 leading-relaxed flex-1">{body}</p>
+                  </div>
+                </TiltCard>
+              </FadeIn>
             ))}
           </div>
         </div>
       </section>
 
-      {/* vs DeleteMe */}
-      <section className="max-w-3xl mx-auto px-6 py-20">
-        <h2 className="text-3xl font-black text-center text-gray-900 mb-12">
-          Why not just use DeleteMe?
-        </h2>
-        <div className="grid sm:grid-cols-2 gap-6">
-          <div className="card p-6 border-2 border-gray-200">
-            <h3 className="font-bold text-gray-500 mb-4 text-sm uppercase tracking-wide">DeleteMe</h3>
-            <ul className="space-y-3 text-sm text-gray-600">
-              <li className="flex items-start gap-2"><span className="text-red-500 mt-0.5">✗</span> $129/year</li>
-              <li className="flex items-start gap-2"><span className="text-red-500 mt-0.5">✗</span> Black box — you don't know what they do</li>
-              <li className="flex items-start gap-2"><span className="text-red-500 mt-0.5">✗</span> Requires trusting a third party with your data</li>
-              <li className="flex items-start gap-2"><span className="text-yellow-500 mt-0.5">~</span> Automated (fewer user errors)</li>
-            </ul>
-          </div>
-          <div className="card p-6 border-2 border-lobster-200 bg-lobster-50">
-            <h3 className="font-bold text-lobster-700 mb-4 text-sm uppercase tracking-wide">Bobster 🦞</h3>
-            <ul className="space-y-3 text-sm text-gray-700">
-              <li className="flex items-start gap-2"><span className="text-green-500 mt-0.5">✓</span> <strong>Free forever</strong></li>
-              <li className="flex items-start gap-2"><span className="text-green-500 mt-0.5">✓</span> Full transparency — see every step</li>
-              <li className="flex items-start gap-2"><span className="text-green-500 mt-0.5">✓</span> No third party holds your personal info</li>
-              <li className="flex items-start gap-2"><span className="text-green-500 mt-0.5">✓</span> Reminders when opt-outs expire</li>
-              <li className="flex items-start gap-2"><span className="text-green-500 mt-0.5">✓</span> Claude-powered personalized guidance</li>
-            </ul>
+      {/* ══════════════════════════════
+          WHAT THEY HAVE — bold, alarming
+          Dark bg + high-contrast cards
+      ══════════════════════════════ */}
+      <section className="py-28 px-6" style={{ background: '#1a1714' }}>
+        <div className="max-w-5xl mx-auto">
+          <FadeIn className="mb-16">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: '#4a4540' }}>
+                  What they already know about you
+                </p>
+                <h2 className="text-4xl sm:text-5xl font-black" style={{ color: '#ffffff' }}>
+                  This is for sale.<br />Right now.
+                </h2>
+                <p className="mt-4 text-base font-medium max-w-sm leading-relaxed" style={{ color: '#7a7470' }}>
+                  Anyone can search these sites — your ex, a stalker, a scammer — for free.
+                </p>
+              </div>
+              <motion.img
+                src="/bob-happy.png"
+                alt="Bob looking concerned"
+                animate={{ rotate: [0, 6, -6, 0], y: [0, -8, 0] }}
+                transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }}
+                className="w-24 h-24 object-contain shrink-0 opacity-90"
+              />
+            </div>
+          </FadeIn>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {([
+              ['Home address',       'Current and all past'],
+              ['Phone number',       'Cell and landline'],
+              ['Email address',      'Work and personal'],
+              ['Relatives',          'Full family tree'],
+              ['Income estimate',    'Within $10K'],
+              ['Criminal records',   'Even dismissed charges'],
+              ['Voter registration', 'Party affiliation'],
+              ['Social profiles',    'Linked to your identity'],
+            ] as [string, string][]).map(([label, sub], i) => (
+              <FadeIn key={label} delay={i * 0.06}>
+                <motion.div
+                  whileHover={{ scale: 1.03, borderColor: '#c8705a' }}
+                  transition={{ type: 'spring', stiffness: 300 }}
+                  style={{
+                    background: '#262320',
+                    border: '1.5px solid #35312d',
+                    borderRadius: '1rem',
+                    padding: '1.25rem',
+                  }}
+                >
+                  <div className="text-sm font-bold mb-1" style={{ color: '#f9f6ef' }}>{label}</div>
+                  <div className="text-xs" style={{ color: '#7a7470' }}>{sub}</div>
+                </motion.div>
+              </FadeIn>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="bg-lobster-600 py-16 text-white text-center">
-        <div className="max-w-2xl mx-auto px-6">
-          <div className="text-5xl mb-6">🦞</div>
-          <h2 className="text-3xl font-black mb-4">Ready to disappear?</h2>
-          <p className="text-lobster-100 mb-8 text-lg">
-            Takes about 2 hours spread across a few weeks. Bob will guide every step.
+      {/* ── Who it's for ── */}
+      <section className="py-28 px-6 bg-white">
+        <div className="max-w-5xl mx-auto">
+          <FadeIn className="text-center mb-20">
+            <p className="section-label mb-4">Who Bobster is for</p>
+            <h2 className="text-4xl sm:text-5xl font-black text-ink-900">
+              You don't need to be
+              <br />a privacy expert.
+            </h2>
+          </FadeIn>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            {[
+              { title: 'You found your address on Spokeo',             sub: 'Your home is listed publicly right now. Bobster shows you exactly how to remove it.' },
+              { title: 'Parents protecting their family',               sub: 'Your kids\'s school, your address, your daily schedule — all indexed.' },
+              { title: 'Getting out of a dangerous situation',          sub: 'Stalking, abusive ex, bad breakup. Your address shouldn\'t be searchable.' },
+              { title: "Privacy-conscious but can't afford DeleteMe",   sub: 'Same result. Zero dollars. Bobster is the free alternative.' },
+              { title: 'Elderly users targeted by scammers',           sub: 'Data brokers fuel phone scams. Removing your info cuts the risk directly.' },
+              { title: 'New mover, job change, fresh start',           sub: 'Your old address and employer are still listed on dozens of sites.' },
+            ].map(({ title, sub }, i) => (
+              <FadeIn key={title} delay={i * 0.08}>
+                <TiltCard>
+                  <div className="card card-hover p-6 flex items-start gap-4 transition-shadow">
+                    <span className="w-9 h-9 rounded-xl bg-brand-50 border border-brand-100 flex items-center justify-center shrink-0 mt-0.5">
+                      <Shield className="w-4 h-4 text-brand-600" />
+                    </span>
+                    <div>
+                      <div className="font-bold text-ink-900 text-sm mb-1">{title}</div>
+                      <div className="text-xs text-ink-400 leading-relaxed">{sub}</div>
+                    </div>
+                  </div>
+                </TiltCard>
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Comparison ── */}
+      <section id="compare" className="py-28 px-6 bg-sand-100">
+        <div className="max-w-3xl mx-auto">
+          <FadeIn className="text-center mb-20">
+            <p className="section-label mb-4">Why Bobster</p>
+            <h2 className="text-4xl sm:text-5xl font-black text-ink-900">
+              DeleteMe charges $129/year.<br />
+              <span className="text-brand-600">Bobster is free.</span>
+            </h2>
+          </FadeIn>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <FadeIn delay={0.1}>
+              <div className="card p-7 h-full">
+                <div className="section-label text-ink-300 mb-6">DeleteMe</div>
+                <ul className="space-y-4">
+                  {['$129 per year', "You can't see what they do", 'Third party holds your data', 'No visibility into the process', 'Auto-renewal billing'].map(text => (
+                    <li key={text} className="flex items-center gap-3 text-sm">
+                      <span className="w-5 h-5 rounded-full bg-red-50 border border-red-100 flex items-center justify-center shrink-0">
+                        <X className="w-3 h-3 text-red-400" />
+                      </span>
+                      <span className="text-ink-500">{text}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </FadeIn>
+
+            <FadeIn delay={0.18}>
+              <div className="card p-7 h-full border-2 border-brand-200"
+                   style={{ background: 'linear-gradient(135deg, #fef6f3 0%, #fde9e3 100%)' }}>
+                <div className="flex items-center gap-3 mb-6">
+                  <span className="section-label text-brand-500">Bobster</span>
+                  <img src="/bob-wink.png" alt="Bob" className="w-8 h-8 object-contain" />
+                </div>
+                <ul className="space-y-4">
+                  {['Free forever', 'You see every single step', 'Stays in your browser — no third party', 'Full transparency and control', 'Renewal reminders built in'].map(text => (
+                    <li key={text} className="flex items-center gap-3 text-sm">
+                      <span className="w-5 h-5 rounded-full bg-brand-600 flex items-center justify-center shrink-0">
+                        <Check className="w-3 h-3 text-white" />
+                      </span>
+                      <span className="font-semibold text-ink-800">{text}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </FadeIn>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Final CTA — terracotta ── */}
+      <section className="relative py-32 px-6 overflow-hidden"
+               style={{ background: 'linear-gradient(160deg, #c8705a 0%, #a85a47 60%, #8b3a2f 100%)' }}>
+        {/* Decorative */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-white/5" />
+          <div className="absolute -bottom-16 -left-16 w-72 h-72 rounded-full bg-white/5" />
+          <motion.img src="/bob-happy.png" alt="" aria-hidden
+            animate={{ rotate: [0, 6, -6, 0], y: [0, -10, 0] }}
+            transition={{ repeat: Infinity, duration: 5, ease: 'easeInOut' }}
+            className="absolute right-16 bottom-0 w-48 opacity-20 hidden lg:block"
+          />
+          {([[10,20,24],[85,15,16],[5,75,12],[92,80,20]] as [number,number,number][]).map(([x,y,s],i) => (
+            <motion.div key={i} style={{ position:'absolute', left:`${x}%`, top:`${y}%` }}
+              animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 10+i*3, ease:'linear' }}>
+              <Sparkle size={s} color="rgba(255,255,255,0.25)" />
+            </motion.div>
+          ))}
+        </div>
+
+        <FadeIn className="max-w-2xl mx-auto text-center relative z-10">
+          <p className="text-xs font-bold uppercase tracking-widest mb-6" style={{ color: 'rgba(255,255,255,0.45)' }}>
+            Ready?
           </p>
-          <Link to="/onboarding" className="inline-flex items-center gap-2 px-8 py-4 bg-white text-lobster-700 font-bold rounded-xl hover:bg-lobster-50 transition-colors text-lg shadow-lg">
-            Start for free — no account needed
+          <h2 className="text-5xl sm:text-6xl font-black text-white mb-6 leading-tight">
+            Take back your<br />privacy today.
+          </h2>
+          <p className="text-lg mb-12 max-w-lg mx-auto leading-relaxed" style={{ color: 'rgba(255,255,255,0.65)' }}>
+            Enter your name. Bob finds your records on {TOTAL} sites and walks you
+            through removing each one — for free.
+          </p>
+          <Link to="/onboarding"
+            className="group inline-flex items-center gap-3 py-5 px-10 text-lg font-bold
+                       bg-white text-brand-700 rounded-2xl hover:bg-brand-50 transition-colors shadow-2xl">
+            Check my exposure
+            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Link>
-        </div>
+          <p className="mt-5 text-xs font-medium" style={{ color: 'rgba(255,255,255,0.35)' }}>
+            Free alternative to DeleteMe · No account required
+          </p>
+        </FadeIn>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-100 py-8 text-center text-sm text-gray-400">
-        <p>Bobster 🦞 · Your data is <strong className="text-gray-600">#NotForSale</strong></p>
-        <p className="mt-1">Free forever · No account required · Open source</p>
+      {/* ── Footer ── */}
+      <footer style={{ background: '#1a1714', borderTop: '1px solid #262320' }} className="py-8 px-8">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <Logo dark size="sm" />
+          <p className="text-xs font-medium" style={{ color: '#4a4540' }}>
+            Your data is <strong style={{ color: '#7a7470' }}>#NotForSale</strong> · Free forever · Open source
+          </p>
+        </div>
       </footer>
     </div>
   )

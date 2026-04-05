@@ -1,8 +1,11 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
+import { ArrowRight, Loader2 } from 'lucide-react'
 import { useApp } from '../context'
 import { generateRiskSummary } from '../lib/claude'
 import { US_STATES } from '../data/states'
+import Logo from '../components/Logo'
 
 type Step = 1 | 2
 
@@ -35,7 +38,7 @@ export default function Onboarding() {
       setSummary(s)
       setRiskSummary(s)
     } catch {
-      const fallback = `Hi ${firstName}! Based on your name and location in ${userState}, your personal information is likely exposed on multiple data broker sites. High-priority sites like Spokeo, Whitepages, BeenVerified, and TruthFinder often have detailed records including your home address, phone number, and relatives. Let's get you opted out — starting with the highest-risk sites first.`
+      const fallback = `${firstName}, your personal information is likely exposed on multiple data broker sites right now. Given that you're in ${userState}, sites like Spokeo, Whitepages, BeenVerified, and TruthFinder almost certainly have your home address, phone number, and possibly your relatives listed publicly. High-risk brokers like MyLife also generate a "reputation score" that appears directly in Google results. The good news: every one of these sites has an opt-out process, and Bobster will walk you through each one. Start with the high-risk sites — they're prioritized at the top of your dashboard.`
       setSummary(fallback)
       setRiskSummary(fallback)
     } finally {
@@ -48,158 +51,176 @@ export default function Onboarding() {
     navigate('/dashboard')
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-100 px-6 py-4">
-        <span className="text-xl font-black text-lobster-600 tracking-tight">Bobster 🦞</span>
-      </div>
+  const slideVariants = {
+    enter: { opacity: 0, x: 40 },
+    center: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: -40 },
+  }
 
-      {/* Progress */}
-      <div className="bg-white border-b border-gray-100 px-6 py-3">
-        <div className="max-w-lg mx-auto flex items-center gap-3">
-          <div className={`flex items-center gap-2 text-sm font-medium ${step >= 1 ? 'text-lobster-600' : 'text-gray-400'}`}>
-            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${step >= 1 ? 'bg-lobster-600 text-white' : 'bg-gray-200 text-gray-500'}`}>1</span>
-            Your info
-          </div>
-          <div className={`h-px flex-1 ${step >= 2 ? 'bg-lobster-300' : 'bg-gray-200'}`} />
-          <div className={`flex items-center gap-2 text-sm font-medium ${step >= 2 ? 'text-lobster-600' : 'text-gray-400'}`}>
-            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${step >= 2 ? 'bg-lobster-600 text-white' : 'bg-gray-200 text-gray-500'}`}>2</span>
-            Your risk summary
-          </div>
+  return (
+    <div className="min-h-screen bg-cream-100 flex flex-col">
+      {/* Header */}
+      <div className="px-8 py-5 flex items-center justify-between border-b border-ink-900/5 bg-cream-100">
+        <Logo />
+        <div className="flex items-center gap-3">
+          <div className={`h-1.5 rounded-full w-12 transition-colors ${step >= 1 ? 'bg-brand-600' : 'bg-ink-100'}`} />
+          <div className={`h-1.5 rounded-full w-12 transition-colors ${step >= 2 ? 'bg-brand-600' : 'bg-ink-100'}`} />
         </div>
       </div>
 
       <div className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-lg">
-          {step === 1 && (
-            <form onSubmit={handleStep1} className="card p-8">
-              <div className="text-4xl mb-4">🦞</div>
-              <h1 className="text-2xl font-black text-gray-900 mb-2">Let's get started</h1>
-              <p className="text-gray-600 mb-8">
-                Bob needs a little info to find your records and build your personal opt-out list.
-              </p>
-
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      First name <span className="text-lobster-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={firstName}
-                      onChange={e => setFirstName(e.target.value)}
-                      placeholder="Jane"
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-lobster-400 focus:border-transparent text-gray-900"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Last name <span className="text-lobster-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={lastName}
-                      onChange={e => setLastName(e.target.value)}
-                      placeholder="Smith"
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-lobster-400 focus:border-transparent text-gray-900"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    State <span className="text-lobster-500">*</span>
-                  </label>
-                  <select
-                    value={userState}
-                    onChange={e => setUserState(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-lobster-400 focus:border-transparent text-gray-900 bg-white"
-                  >
-                    <option value="">Select your state</option>
-                    {US_STATES.map(s => (
-                      <option key={s.code} value={s.name}>{s.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Email <span className="text-gray-400 text-xs font-normal">(optional — for renewal reminders)</span>
-                  </label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="jane@example.com"
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-lobster-400 focus:border-transparent text-gray-900"
-                  />
-                </div>
-
-                {error && (
-                  <p className="text-sm text-red-600 bg-red-50 px-4 py-2 rounded-lg">{error}</p>
-                )}
-
-                <button type="submit" className="btn-primary w-full justify-center py-3 text-base mt-2">
-                  Build My Opt-Out List →
-                </button>
-              </div>
-
-              <p className="mt-4 text-xs text-gray-400 text-center">
-                Your data stays in your browser. We never store or sell your information.
-              </p>
-            </form>
-          )}
-
-          {step === 2 && (
-            <div className="card p-8">
-              <div className="text-4xl mb-4">🦞</div>
-              <h1 className="text-2xl font-black text-gray-900 mb-2">
-                Your privacy report
-              </h1>
-              <p className="text-gray-500 text-sm mb-6">
-                Personalized for {firstName} {lastName} in {userState}
-              </p>
-
-              {loading ? (
-                <div className="py-8 text-center">
-                  <div className="inline-block w-8 h-8 border-4 border-lobster-200 border-t-lobster-600 rounded-full animate-spin mb-4" />
-                  <p className="text-gray-600 text-sm">Bob is analyzing your exposure...</p>
-                </div>
-              ) : (
-                <div className="bg-lobster-50 border border-lobster-100 rounded-xl p-5 mb-6 text-gray-800 leading-relaxed text-sm whitespace-pre-wrap">
-                  {summary}
-                </div>
-              )}
-
-              <div className="bg-gray-50 rounded-xl p-4 mb-6">
-                <div className="text-sm font-semibold text-gray-700 mb-2">What happens next:</div>
-                <ul className="space-y-1.5 text-sm text-gray-600">
-                  <li className="flex items-start gap-2">
-                    <span className="text-lobster-500 mt-0.5">→</span>
-                    You'll see a dashboard with all {'{N}'} data brokers ranked by risk
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-lobster-500 mt-0.5">→</span>
-                    Bob gives you exact steps for each opt-out
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-lobster-500 mt-0.5">→</span>
-                    Your progress is saved automatically in your browser
-                  </li>
-                </ul>
-              </div>
-
-              <button
-                onClick={handleFinish}
-                disabled={loading}
-                className="btn-primary w-full justify-center py-3 text-base disabled:opacity-60"
+        <div className="w-full max-w-md">
+          <AnimatePresence mode="wait">
+            {step === 1 && (
+              <motion.div
+                key="step1"
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
               >
-                Go to My Dashboard →
-              </button>
-            </div>
-          )}
+                <div className="mb-8">
+                  <p className="section-label mb-3">Step 1 of 2</p>
+                  <h1 className="text-3xl font-black text-ink-900 mb-2">Your information</h1>
+                  <p className="text-ink-500 text-sm leading-relaxed">
+                    Bobster uses this to find your records and build your personal opt-out list.
+                    Nothing is stored outside your browser.
+                  </p>
+                </div>
+
+                <form onSubmit={handleStep1} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-ink-600 mb-2 uppercase tracking-wide">
+                        First name
+                      </label>
+                      <input
+                        type="text"
+                        value={firstName}
+                        onChange={e => setFirstName(e.target.value)}
+                        placeholder="Jane"
+                        className="input"
+                        autoFocus
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-ink-600 mb-2 uppercase tracking-wide">
+                        Last name
+                      </label>
+                      <input
+                        type="text"
+                        value={lastName}
+                        onChange={e => setLastName(e.target.value)}
+                        placeholder="Smith"
+                        className="input"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-ink-600 mb-2 uppercase tracking-wide">
+                      State
+                    </label>
+                    <select
+                      value={userState}
+                      onChange={e => setUserState(e.target.value)}
+                      className="input"
+                    >
+                      <option value="">Select your state</option>
+                      {US_STATES.map(s => (
+                        <option key={s.code} value={s.name}>{s.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-ink-600 mb-2 uppercase tracking-wide">
+                      Email{' '}
+                      <span className="text-ink-300 font-normal normal-case tracking-normal">
+                        (optional — renewal reminders)
+                      </span>
+                    </label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      placeholder="jane@example.com"
+                      className="input"
+                    />
+                  </div>
+
+                  {error && (
+                    <p className="text-xs text-brand-700 bg-brand-50 border border-brand-100 rounded-xl px-4 py-3">
+                      {error}
+                    </p>
+                  )}
+
+                  <button type="submit" className="btn-primary w-full py-4 text-base mt-2">
+                    Build my opt-out list
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </form>
+              </motion.div>
+            )}
+
+            {step === 2 && (
+              <motion.div
+                key="step2"
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <div className="mb-8">
+                  <p className="section-label mb-3">Step 2 of 2</p>
+                  <h1 className="text-3xl font-black text-ink-900 mb-2">Your privacy report</h1>
+                  <p className="text-ink-500 text-sm">
+                    Personalized for {firstName} {lastName} in {userState}
+                  </p>
+                </div>
+
+                <div className="card p-6 mb-5 min-h-[160px] flex items-start">
+                  {loading ? (
+                    <div className="w-full flex flex-col items-center justify-center py-8 gap-3">
+                      <Loader2 className="w-6 h-6 text-brand-500 animate-spin" />
+                      <p className="text-sm text-ink-400 font-medium">Analyzing your exposure...</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-ink-700 leading-relaxed">{summary}</p>
+                  )}
+                </div>
+
+                <div className="bg-ink-900 rounded-2xl p-5 mb-5">
+                  <p className="text-xs font-bold uppercase tracking-widest text-ink-500 mb-4">What happens next</p>
+                  <ul className="space-y-2.5">
+                    {[
+                      'Your dashboard shows all brokers ranked by risk',
+                      'Bobster gives you exact steps for each opt-out',
+                      'Progress saves automatically — no account needed',
+                    ].map(text => (
+                      <li key={text} className="flex items-start gap-3 text-sm text-ink-300">
+                        <span className="w-5 h-5 rounded-full bg-brand-600/20 border border-brand-500/30 flex items-center justify-center shrink-0 mt-0.5">
+                          <ArrowRight className="w-3 h-3 text-brand-400" />
+                        </span>
+                        {text}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <button
+                  onClick={handleFinish}
+                  disabled={loading}
+                  className="btn-primary w-full py-4 text-base disabled:opacity-50"
+                >
+                  Go to my dashboard
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </div>
